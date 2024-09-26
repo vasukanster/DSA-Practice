@@ -1,0 +1,74 @@
+/*
+2402. Meeting Rooms III
+You are given an integer n. There are n rooms numbered from 0 to n - 1.
+
+You are given a 2D integer array meetings where meetings[i] = [starti, endi] means that a meeting will be held during the half-closed time interval [starti, endi). All the values of starti are unique.
+
+Meetings are allocated to rooms in the following manner:
+
+Each meeting will take place in the unused room with the lowest number.
+If there are no available rooms, the meeting will be delayed until a room becomes free. The delayed meeting should have the same duration as the original meeting.
+When a room becomes unused, meetings that have an earlier original start time should be given the room.
+Return the number of the room that held the most meetings. If there are multiple rooms, return the room with the lowest number.
+
+A half-closed interval [a, b) is the interval between a and b including a and not including b.
+*/
+
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+
+using namespace std;
+
+int mostMeetingRooms(int n, vector<vector<int>>& meetings) {
+    // Sort meetings based on start time
+    sort(meetings.begin(), meetings.end());
+
+    // Min-heap to track end times of meetings in rooms
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> minHeap;
+    
+    // Array to track the number of meetings held in each room
+    vector<int> roomCount(n, 0);
+    
+    // Process each meeting
+    for (const auto& meeting : meetings) {
+        int start = meeting[0], end = meeting[1];
+
+        // Free up rooms that are done before the current meeting starts
+        while (!minHeap.empty() && minHeap.top().first <= start) {
+            minHeap.pop();
+        }
+
+        // If a room is available, allocate it
+        if (minHeap.size() < n) {
+            minHeap.push({end, minHeap.size()}); // Use the next available room
+            roomCount[minHeap.size() - 1]++; // Increment the count for that room
+        } else {
+            // Delay the current meeting
+            auto earliest = minHeap.top(); // The meeting that ends the earliest
+            minHeap.pop(); // Remove it from the heap
+            // Push the delayed meeting into the heap
+            minHeap.push({earliest.first + (end - start), earliest.second});
+            roomCount[earliest.second]++; // Increment the count for the room used
+        }
+    }
+
+    // Find the room that held the most meetings
+    int maxMeetings = 0, roomWithMostMeetings = 0;
+    for (int i = 0; i < n; ++i) {
+        if (roomCount[i] > maxMeetings) {
+            maxMeetings = roomCount[i];
+            roomWithMostMeetings = i;
+        }
+    }
+
+    return roomWithMostMeetings;
+}
+
+int main() {
+    vector<vector<int>> meetings = {{0, 10}, {5, 15}, {10, 20}, {15, 25}, {20, 30}};
+    int n = 3; // Number of rooms
+    cout << "Room that held the most meetings: " << mostMeetingRooms(n, meetings) << endl;
+    return 0;
+}
